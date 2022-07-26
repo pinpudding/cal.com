@@ -32,7 +32,17 @@ class MyDocument extends Document<Props> {
               window.sessionStorage.setItem('calEmbedMode', location.search.includes("embed="))
               window.isEmbed = ()=> {
                 return window.sessionStorage.getItem('calEmbedMode') === "true"
-              }`,
+              };
+              window.getEmbedTheme = ()=> {
+                const url = new URL(document.URL);
+                return url.searchParams.get("theme");
+              };
+              window.getEmbedNamespace = ()=> {
+                const url = new URL(document.URL);
+                const namespace = url.searchParams.get("embed");
+                return namespace;
+              };
+              `,
             }}
           />
         </Head>

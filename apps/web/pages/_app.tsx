@@ -2,9 +2,11 @@ import { EventCollectionProvider } from "next-collect/client";
 import { DefaultSeo } from "next-seo";
 import { ThemeProvider } from "next-themes";
 import Head from "next/head";
+import { useEffect, useState } from "react";
 import superjson from "superjson";
 
 import "@calcom/embed-core/src/embed-iframe";
+import { useIsEmbed } from "@calcom/embed-core/src/embed-iframe";
 import { httpBatchLink } from "@calcom/trpc/client/links/httpBatchLink";
 import { httpLink } from "@calcom/trpc/client/links/httpLink";
 import { loggerLink } from "@calcom/trpc/client/links/loggerLink";
@@ -17,7 +19,6 @@ import LicenseRequired from "@ee/components/LicenseRequired";
 
 import AppProviders, { AppProps } from "@lib/app-providers";
 import { seoConfig } from "@lib/config/next-seo.config";
-import { ThemeProvider } from "@lib/hooks/useTheme";
 
 import I18nLanguageHandler from "@components/I18nLanguageHandler";
 
@@ -34,7 +35,13 @@ function MyApp(props: AppProps) {
   } else if (router.pathname === "/500") {
     pageStatus = "500";
   }
+
   const forcedTheme = Component.isThemeSupported ? undefined : "light";
+
+  // Force the theme as configured by the website using the embed. Embed isn't supposed to stay in sync with other embeds or direct links from that website.
+  const embedNamespace = typeof window !== "undefined" ? window.getEmbedNamespace() : null;
+  const storageKey = typeof embedNamespace === "string" ? `embed-theme-${embedNamespace}` : "theme";
+
   return (
     <EventCollectionProvider options={{ apiPath: "/api/collect-events" }}>
       <ContractsProvider>
@@ -46,7 +53,11 @@ function MyApp(props: AppProps) {
             <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
           </Head>
           {/* color-scheme makes background:transparent not work which is required by embed. We need to ensure next-theme adds color-scheme to `body` instead of `html`(https://github.com/pacocoursey/next-themes/blob/main/src/index.tsx#L74). Once that's done we can enable color-scheme support */}
-          <ThemeProvider enableColorScheme={false} forcedTheme={forcedTheme} attribute="class">
+          <ThemeProvider
+            enableColorScheme={false}
+            storageKey={storageKey}
+            forcedTheme={forcedTheme}
+            attribute="class">
             {Component.requiresLicense ? (
               <LicenseRequired>
                 <Component {...pageProps} err={err} />
